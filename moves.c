@@ -32,7 +32,7 @@ void movegen_pawnpush(POSITION *pos,int color) {
 	int sq;
 
 	// 1 move forward pawn pushes.
-	m1 = color == WHITE ? m1 << 8 : m1 >> 8;
+	m1 = color == WHITE ? NORTH(m1) : SOUTH(m1);
 	mal = m1 & ~FILEMASKS[color==WHITE ? A : H];
 	mar = m1 & ~FILEMASKS[color==WHITE ? H : A];
 	
@@ -42,15 +42,15 @@ void movegen_pawnpush(POSITION *pos,int color) {
 	// check for candidate pawns that could do a starting move double push. These are pawns
 	// that could move forward one (m1) and are now on the 3rd rank.
 	m2 = m1 & RANKMASKS[color==WHITE ? 2 : 5];
-	m2 = color == WHITE ? m2 << 8 : m2 >> 8;
+	m2 = color == WHITE ? NORTH(m2) : SOUTH(m2);
 	m2 &= ~pos->all;
 	
 	// check for left attacks (clear out the leftmost file)
-	mal <<=1;
+	mal = WEST(mal);
 	mal &= pos->sides[color ? 0 : 1];
 	
 	// check for right attacks (clear out the rightmost file)
-	mar >>=1;
+	mar = EAST(mar);
 	mar &= pos->sides[color ? 0 : 1];
 	
 	// add candidate moves to movelist.

@@ -4,6 +4,19 @@
 const char g_pieceNames[PMAX+1] = {'*','p','n','b','r','q','k'};
 
 
+
+const char * g_squareNames[] = {
+	"h1","g1","f1","e1","d1","c1","b1","a1",
+	"h2","g2","f2","e2","d2","c2","b2","a2",
+	"h3","g3","f3","e3","d3","c3","b3","a3",
+	"h4","g4","f4","e4","d4","c4","b4","a4",
+	"h5","g5","f5","e5","d5","c5","b5","a5",
+	"h6","g6","f6","e6","d6","c6","b6","a6",
+	"h7","g7","f7","e7","d7","c7","b7","a7",
+	"h8","g8","f8","e8","d8","c8","b8","a8"
+};
+
+
 void printBitboard(uint64_t bb) {
 
 	uint64_t mask = 0x01ull << 63;
@@ -84,16 +97,6 @@ void positionToFEN(POSITION * p, bool asURL) {
 int fileFromIndex(int square) {return square & 7;}
 int rankFromIndex(int square) {return square >> 3;}
 
-
-const char * squareName(int sq) {
-
-	static char buf[20];
-	sprintf(buf,"%c%d",fileFromIndex(sq) + 'A',rankFromIndex(sq)+ '0');
-
-
-	return buf;
-}
-
 const int g_index64[64] = {
     0,  1, 48,  2, 57, 49, 28,  3,
    61, 58, 50, 42, 38, 29, 17,  4,
@@ -125,13 +128,11 @@ void printMoves(POSITION *pos, MOVELIST * moves) {
 	
 	for (int i = 0; moves && i < moves->count; i++) {
 		printf(
-			"%c%c%d%c%c%d\n",
+			"%c%s%c%s\n",
 			(moves->moves[i].piece == PAWN) ? ' ' : toupper(g_pieceNames[moves->moves[i].piece]),
-			'h' - fileFromIndex(moves->moves[i].from),
-			rankFromIndex(moves->moves[i].from) + 1 ,
+			g_squareNames[moves->moves[i].from],
 			moves->moves[i].type == MT_CAPTURE ? 'x' : '-',
-			'h' - fileFromIndex(moves->moves[i].to) ,
-			rankFromIndex(moves->moves[i].to) + 1);
+			g_squareNames[moves->moves[i].to]);
 	}
 }
 
