@@ -8,6 +8,53 @@
 #include <ctype.h>
 #include <stdbool.h>
 
+
+/*
+  ==bitboard mapping convention==
+
+    A  B  C  D  E  F  G  H 
+    -  -  -  -  -  -  -  - 
+8 | 63 62 61 60 59 58 57 56
+
+7 | 55 54 53 52 51 50 49 48
+
+6 | 47 46 45 44 43 42 41 40
+
+5 | 39 38 37 36 35 34 33 32
+
+4 | 31 30 29 28 27 26 25 24
+
+3 | 23 22 21 20 19 18 17 16 
+
+2 | 15 14 13 12 11 10 09 08
+
+1 | 07 06 05 04 03 02 01 00
+
+*/
+
+#define RANK1_MASK 0x00000000000000FFull
+#define RANK2_MASK 0x000000000000FF00ull
+#define RANK3_MASK 0x0000000000FF0000ull
+#define RANK4_MASK 0x00000000FF000000ull
+#define RANK5_MASK 0x000000FF00000000ull
+#define RANK6_MASK 0x0000FF0000000000ull
+#define RANK7_MASK 0x00FF000000000000ull
+#define RANK8_MASK 0xFF00000000000000ull
+
+#define AFILE_MASK 0x8080808080808080ull
+#define BFILE_MASK 0x4040404040404040ull
+#define CFILE_MASK 0x2020202020202020ull
+#define DFILE_MASK 0x1010101010101010ull
+#define EFILE_MASK 0x0808080808080808ull
+#define FFILE_MASK 0x0404040404040404ull
+#define GFILE_MASK 0x0202020202020202ull
+#define HFILE_MASK 0x0101010101010101ull
+
+extern uint64_t FILEMASKS[8];
+extern uint64_t RANKMASKS[8];
+extern uint64_t SQUAREMASKS[64];
+extern uint64_t FRMASKS[8][8];
+
 #define WHITE 0
 #define BLACK 1
 
@@ -25,6 +72,8 @@ typedef struct {
 
 } POSITION;
 
+
+
 typedef enum {MT_NORMAL=0,MT_ENPASSANT=1,MT_CAPTURE=2} MOVETYPES;
 
 typedef struct {
@@ -37,6 +86,15 @@ typedef struct {
 
 } MOVE;
 
+
+#define MAX_MOVES 1024
+typedef struct {
+
+	MOVE moves[MAX_MOVES];
+	int count;
+
+} MOVELIST;
+
 //ui apis
 bool ui_running();
 void ui_init();
@@ -45,20 +103,14 @@ void ui_update();
 //movegen apis
 void movegen_generate();
 
-//engine apis
-uint64_t eng_bitFile(int file);
-uint64_t eng_bitRank(int rank);
-uint64_t eng_bitFileRank(int file, int rank);
-uint64_t eng_bitPos(int pos);
-
 
 void eng_initPosition();
 void eng_init();
 POSITION * eng_curPosition();
 
 
-
 //util apis
+void printMoves(POSITION *pos, MOVELIST * moves);
 int bitScanForward(uint64_t bb);
 void printBitboard(uint64_t bb);
 const char getPieceNameAtBit(POSITION *pos, uint64_t bit);

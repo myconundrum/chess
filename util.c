@@ -30,7 +30,7 @@ const char getPieceNameAtBit(POSITION *pos, uint64_t bit) {
 }
 
 const char getPieceNameAtFileAndRank(POSITION * pos, int file, int rank) {
-	return getPieceNameAtBit(pos,eng_bitFileRank(file,rank));
+	return getPieceNameAtBit(pos,FRMASKS[file][rank]);
 }
 
 void positionToFEN(POSITION * p, bool asURL) {
@@ -81,6 +81,19 @@ void positionToFEN(POSITION * p, bool asURL) {
 }
 
 
+int fileFromIndex(int square) {return square & 7;}
+int rankFromIndex(int square) {return square >> 3;}
+
+
+const char * squareName(int sq) {
+
+	static char buf[20];
+	sprintf(buf,"%c%d",fileFromIndex(sq) + 'A',rankFromIndex(sq)+ '0');
+
+
+	return buf;
+}
+
 const int g_index64[64] = {
     0,  1, 48,  2, 57, 49, 28,  3,
    61, 58, 50, 42, 38, 29, 17,  4,
@@ -108,6 +121,20 @@ int bitScanForward(uint64_t bb) {
    return g_index64[((bb & -bb) * debruijn64) >> 58];
 }
 
+void printMoves(POSITION *pos, MOVELIST * moves) {
+	
+	for (int i = 0; moves && i < moves->count; i++) {
+		printf(
+			"%c%c%d%c%c%d\n",
+			(moves->moves[i].piece == PAWN) ? ' ' : toupper(g_pieceNames[moves->moves[i].piece]),
+			'h' - fileFromIndex(moves->moves[i].from),
+			rankFromIndex(moves->moves[i].from) + 1 ,
+			moves->moves[i].type == MT_CAPTURE ? 'x' : '-',
+			'h' - fileFromIndex(moves->moves[i].to) ,
+			rankFromIndex(moves->moves[i].to) + 1);
+	}
+}
+
 
 void printPosition(POSITION *p) {
 
@@ -117,10 +144,10 @@ void printPosition(POSITION *p) {
 	}
 	printf("\n");
 	for (int r = 7; r >=0 ; r--) {
-		printf("%d: |",r);
+		printf("%d: |",r+1);
 		for (int f = A; f >= H; f--) {
 
-			if (p->all & eng_bitFileRank(f,r)) {
+			if (p->all & FRMASKS[f][r]) {
 				printf(" %c |",getPieceNameAtFileAndRank(p,f,r));
 			} else {
 				printf("   |");
