@@ -14,7 +14,85 @@ const int g_pieceValues[PMAX] = {1,3,3,5,9,999};
 POSITION g_position;
 POSITION * eng_curPosition() {return &g_position;}
 
+void eng_loadFEN(char *fen) {
 
+	char pieces[100];
+	char toMove[5];
+	char castle[20];
+	char ep[20];
+	int  halfMoves;
+	int  fullMoves;
+	char *p;
+	int sq = 63;
+	int epFile;
+	int epRank;
+
+	if(!fen) {return;}
+
+	sscanf(fen,"%s %s %s %s %d %d",pieces,toMove,castle,ep,&halfMoves,&fullMoves);
+
+	/** Manage Pieces **/
+	p = pieces;
+	while (sq > -1 && p && *p) {
+		if (isdigit(*p)) {
+			sq -= *p - '0';
+		} else if (isalpha(*p)) {
+			switch (*p) {
+				case 'p': g_position.pieces[BLACK][PAWN] |= SQUAREMASKS[sq--]; break;
+				case 'P': g_position.pieces[WHITE][PAWN] |= SQUAREMASKS[sq--]; break;
+				case 'n': g_position.pieces[BLACK][KNIGHT] |= SQUAREMASKS[sq--]; break;
+				case 'N': g_position.pieces[WHITE][KNIGHT] |= SQUAREMASKS[sq--]; break;
+				case 'r': g_position.pieces[BLACK][ROOK] |= SQUAREMASKS[sq--]; break;
+				case 'R': g_position.pieces[WHITE][ROOK] |= SQUAREMASKS[sq--]; break;
+				case 'b': g_position.pieces[BLACK][BISHOP] |= SQUAREMASKS[sq--]; break;
+				case 'B': g_position.pieces[WHITE][BISHOP] |= SQUAREMASKS[sq--]; break;
+				case 'q': g_position.pieces[BLACK][QUEEN] |= SQUAREMASKS[sq--]; break;
+				case 'Q': g_position.pieces[WHITE][QUEEN] |= SQUAREMASKS[sq--]; break;
+				case 'k': g_position.pieces[BLACK][KING] |= SQUAREMASKS[sq--]; break;
+				case 'K': g_position.pieces[WHITE][KING] |= SQUAREMASKS[sq--]; break;
+				break; 
+				default: printf("invalid fen char %c.\n",*p);
+				break;
+			}
+		}
+		p++;
+	}
+
+	for (PIECES piece = PAWN; piece < PMAX; piece++) {
+		g_position.sides[BLACK] |= g_position.pieces[BLACK][piece];
+		g_position.sides[WHITE] |= g_position.pieces[WHITE][piece];
+	}
+	g_position.all = g_position.sides[BLACK] | g_position.sides[WHITE];
+
+	/**Manage To Move **/
+	g_position.toMove = (*toMove == 'b') ? BLACK : WHITE;
+
+	/**Manage castling **/
+	p = castle;
+	while (*p) {
+		switch(*p) {
+			case 'Q': g_position.qCastle[WHITE] = true;break;
+			case 'q': g_position.qCastle[BLACK] = true;break;
+			case 'K': g_position.kCastle[WHITE] = true;break;
+			case 'k': g_position.kCastle[BLACK] = true;break;
+		}
+		p++;
+	}
+
+	/**Manage ep squares**/
+	if (*ep && *ep != '-') {
+		epFile = 'h' - ep[0];
+		epRank = ep[1] - '0';
+		epRank--;
+		g_position.ep = FRMASKS[epFile][epRank];
+	}
+
+	g_position.halfMoves = halfMoves;
+	g_position.fullMoves = fullMoves;
+
+}
+
+/*
 void eng_loadFEN(char * fen) {
 
 	memset(&g_position,0,sizeof(g_position));
@@ -46,6 +124,8 @@ void eng_loadFEN(char * fen) {
 		p++;
 	}
 
+
+
 	for (PIECES piece = PAWN; piece < PMAX; piece++) {
 		g_position.sides[BLACK] |= g_position.pieces[BLACK][piece];
 		g_position.sides[WHITE] |= g_position.pieces[WHITE][piece];
@@ -53,11 +133,14 @@ void eng_loadFEN(char * fen) {
 	g_position.all = g_position.sides[BLACK] | g_position.sides[WHITE];
 }
 
+*/
+
 void eng_initPosition() {
 
 	//eng_loadFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
-	eng_loadFEN("rnbqkbnr/pppppppp/8/8/8/1p1p1p1p/PPPPPPPP/RNBQKBNR");
+	//eng_loadFEN("rnbqkbnr/pppppppp/8/8/8/1p1p1p1p/PPPPPPPP/RNBQKBNR");
 	//eng_loadFEN("8/8/8/8/8/5p2/4P3/8");
+	eng_loadFEN("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
 }
 
 void eng_init() {

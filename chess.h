@@ -86,11 +86,19 @@ typedef enum {PAWN = 1,KNIGHT,BISHOP,ROOK,QUEEN,KING,PMAX} PIECES;
 #define BFR(f,r) 0x01ull << (f + 8*r);
 #define BPOS(p)  0x01ull << p;
 
+
 typedef struct {
 
-	uint64_t pieces[2][PMAX];
-	uint64_t sides[2];
-	uint64_t all;
+	uint64_t pieces[2][PMAX];  	//bitboard by piece
+	uint64_t sides[2];		   	//bitboard by side
+	uint64_t all;			   	//all pieces bitboard
+	uint64_t ep;			  	//en passant
+
+	uint8_t  toMove;			//side to move
+	bool 	 kCastle[2];		//flag for kingside castle avail
+	bool	 qCastle[2];		//flag for queenside castle avail
+	uint16_t halfMoves;			//half moves in the position				
+	uint16_t fullMoves; 		//full moves in the position
 
 } POSITION;
 

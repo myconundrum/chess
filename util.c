@@ -139,7 +139,15 @@ void printMoves(POSITION *pos, MOVELIST * moves) {
 
 void printPosition(POSITION *p) {
 
-	printf("    ");
+	printf("**POSITION DUMP**\n");
+	printf("%s to move.\n",p->toMove == WHITE ? "White" : "Black");
+	printf("%d half moves and %d full moves.\n",p->halfMoves,p->fullMoves);
+	if (p->ep) {
+		printf("%s is en passant square\n",g_squareNames[bitScanForward(p->ep)]);
+	}
+
+
+	printf("\n    ");
 	for (int f = A; f >= H; f--) {
 		printf(" %c |",'H' - f);
 	}
