@@ -8,7 +8,6 @@ int main (int argc, char **argv) {
 	
 	eng_init();
 	eng_initPosition();
-
 	ui_init();
 
 	while(ui_running()) {

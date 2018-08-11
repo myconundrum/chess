@@ -22,6 +22,8 @@ void cmd_dumpPosition(char * str) {printPosition(eng_curPosition());}
 void cmd_dumpFEN(char *str) {positionToFEN(eng_curPosition(),false);}
 void cmd_dumpFENURL(char * str) {positionToFEN(eng_curPosition(),true);}
 
+void cmd_testMove(char *str) {movegen_generate();}
+
 void cmd_help(char * str);
 
 CMD g_commands[] = {
@@ -29,6 +31,7 @@ CMD g_commands[] = {
 	{"dpos","Print the current position.",cmd_dumpPosition},
 	{"dfen","Print the current position as a FEN string.",cmd_dumpFEN},
 	{"durl","Print the current position as a FEN URL.",cmd_dumpFENURL},
+	{"tm","Test movegen.",cmd_testMove},
 	{"help","Show list of commands.",cmd_help}
 };
 
