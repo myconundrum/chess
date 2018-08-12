@@ -3,8 +3,6 @@
 
 const char g_pieceNames[PMAX+1] = {'*','p','n','b','r','q','k'};
 
-
-
 const char * g_squareNames[] = {
 	"h1","g1","f1","e1","d1","c1","b1","a1",
 	"h2","g2","f2","e2","d2","c2","b2","a2",
@@ -25,6 +23,24 @@ void printBitboard(uint64_t bb) {
 		mask >>= 1;
 	}
 	puts("");
+
+	printf("\n    ");
+	for (int f = A; f >= H; f--) {
+		printf(" %c |",'H' - f);
+	}
+	printf("\n");
+	for (int r = 7; r >=0 ; r--) {
+		printf("%d: |",r+1);
+		for (int f = A; f >= H; f--) {
+
+			if (bb & FRMASKS[f][r]) {
+				printf(" * |");
+			} else {
+				printf("   |");
+			}
+		}
+		printf("\n");
+	}	
 }
 
 
@@ -97,6 +113,9 @@ void positionToFEN(POSITION * p, bool asURL) {
 int fileFromIndex(int square) {return square & 7;}
 int rankFromIndex(int square) {return square >> 3;}
 
+
+
+
 const int g_index64[64] = {
     0,  1, 48,  2, 57, 49, 28,  3,
    61, 58, 50, 42, 38, 29, 17,  4,
@@ -125,13 +144,17 @@ int bitScanForward(uint64_t bb) {
 }
 
 void printMoves(POSITION *pos, MOVELIST * moves) {
+
 	
 	for (int i = 0; moves && i < moves->count; i++) {
 
 		if (moves->moves[i].piece != PAWN) {
 			printf("%c",toupper(g_pieceNames[moves->moves[i].piece]));
 		}
+
 		printf("%s",g_squareNames[moves->moves[i].from]);
+		
+		
 		if (moves->moves[i].capture || moves->moves[i].epCapture) {
 			printf("x");
 		}

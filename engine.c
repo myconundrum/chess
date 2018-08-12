@@ -97,11 +97,11 @@ void eng_initPosition() {
 
 	//eng_loadFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
 	//eng_loadFEN("rnbqkbnr/pppppppp/8/8/8/1p1p1p1p/PPPPPPPP/RNBQKBNR");
-	//eng_loadFEN("8/8/8/8/8/5p2/4P3/8");
+	eng_loadFEN("K1K4N/2N5/3K4/5N2/8/3pKp2/4pP2/8 w - - 0 23");
 	//eng_loadFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2");
 	//eng_loadFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2");
 	//eng_loadFEN("2r3k1/1q1nbppp/r3p3/3pP3/pPpP4/P1Q2N2/2RN1PPP/2R4K b - b3 0 23");
-	eng_loadFEN("4qk2/1PPP3P/8/8/8/8/8/8 w - - 0 23");
+	//eng_loadFEN("4qk2/1PPP3P/8/8/8/8/8/8 w - - 0 23");
 		
 
 	
@@ -118,4 +118,6 @@ void eng_init() {
 	for (int i = 0; i < 64; i++) {
 		SQUAREMASKS[i] = BPOS(i);
 	}
+
+	movegen_init();
 }

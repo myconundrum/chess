@@ -33,7 +33,7 @@
 */
 
 typedef enum {
-	
+
 	H1,G1,F1,E1,D1,C1,B1,A1,
 	H2,G2,F2,E2,D2,C2,B2,A2,
 	H3,G3,F3,E3,D3,C3,B3,A3,
@@ -83,6 +83,10 @@ extern uint64_t FRMASKS[8][8];
 #define BLACK 1
 
 #define OPPONENT(c) (c == WHITE ? BLACK : WHITE)
+
+
+#define FILEFROMSQUARE(sq)  (sq & 7)
+#define RANKFROMSQUARE(sq)  (sq >> 3)
 
 typedef enum {H=0,G=1,F=2,E=3,D=4,C=5,B=6,A=7,FMAX=8} FILES;
 typedef enum {PAWN = 1,KNIGHT,BISHOP,ROOK,QUEEN,KING,PMAX} PIECES;
@@ -134,6 +138,7 @@ void ui_init();
 void ui_update();
 
 //movegen apis
+void movegen_init();
 void movegen_generate();
 
 
@@ -143,6 +148,15 @@ POSITION * eng_curPosition();
 
 
 //util apis
+
+ #define MAX(a,b)  (((a) > (b)) ? (a) : (b))
+ #define MIN(a,b)  (((a) < (b)) ? (a) : (b))
+ #define FILEDISTANCE(a,b) abs(((a)&7) - ((b)&7))
+ #define RANKDISTANCE(a,b) abs(((a)>>3) - ((b)>>3))
+ #define DISTANCE(a,b) MAX(FILEDISTANCE(a,b),RANKDISTANCE(a,b))
+
+
+int distance(int sq1, int sq2);
 void printMoves(POSITION *pos, MOVELIST * moves);
 int bitScanForward(uint64_t bb);
 void printBitboard(uint64_t bb);

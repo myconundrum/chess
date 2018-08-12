@@ -1,6 +1,9 @@
 #include "chess.h"
 
 
+uint64_t g_kingMoves[64];
+uint64_t g_knightMoves[64];
+
 MOVELIST g_moveList;
 
 void movegen_clearMoves() {
@@ -51,7 +54,58 @@ void movegen_addPawnMove(int color, int piece, int from, int to, bool capture, b
 	}
 }
 
-void movegen_pawnpush(POSITION *pos) {
+void movegen_king(POSITION *pos) {
+
+	int from; 
+	int to;
+	uint64_t m;
+	uint64_t kings = pos->pieces[pos->toMove][KING];
+	uint64_t opp = pos->sides[OPPONENT(pos->toMove)];
+
+	while (kings) {
+		//
+		// normally, there would only be one king, however some puzzles and tests
+		// will have more than one king on the board.
+		//
+		from = bitScanForward(kings);
+		kings ^= SQUAREMASKS[from];
+
+		m = g_kingMoves[from] & ~pos->sides[pos->toMove]; 	
+		
+		// add candidate moves to movelist.
+		while(m) {
+			to = bitScanForward(m);
+			m ^= SQUAREMASKS[to];
+			movegen_addMove(pos->toMove,KING,from,to,SQUAREMASKS[to] & opp);
+		}
+	}
+}
+
+
+void movegen_knight(POSITION *pos) {
+
+	int from; 
+	int to;
+	uint64_t m;
+	uint64_t knights = pos->pieces[pos->toMove][KNIGHT];
+	uint64_t opp = pos->sides[OPPONENT(pos->toMove)];
+
+	while (knights) {
+		from = bitScanForward(knights);
+		knights ^= SQUAREMASKS[from];
+
+		m = g_knightMoves[from] & ~pos->sides[pos->toMove]; 	
+		
+		// add candidate moves to movelist.
+		while(m) {
+			to = bitScanForward(m);
+			m ^= SQUAREMASKS[to];
+			movegen_addMove(pos->toMove,KNIGHT,from,to,SQUAREMASKS[to] & opp);
+		}
+	}
+}
+
+void movegen_pawn(POSITION *pos) {
 
 	// m1 -- candidate 1 move pawn pushes
 	// m2 -- candidate 2 move pawn pushes
@@ -135,9 +189,32 @@ MOVELIST * movegen_getMoves() {
 	return &g_moveList;
 }
 
+
+void movegen_init() {
+
+	memset(g_kingMoves,0,sizeof(g_kingMoves));
+
+	for (int i = 0; i < 64; i++) {
+		for (int j = 0; j < 64; j++) {
+			if (DISTANCE(i,j) == 1) {
+				g_kingMoves[i] |= SQUAREMASKS[j];
+			}
+			if ((RANKDISTANCE(i,j) == 1 && FILEDISTANCE(i,j) == 2 )|| 
+				(RANKDISTANCE(i,j) == 2 && FILEDISTANCE(i,j) == 1 )) {
+				g_knightMoves[i] |= SQUAREMASKS[j];
+			}
+		}
+	}
+
+	printBitboard(g_knightMoves[F3]);
+}
+
 void movegen_generate() {
+
 	movegen_clearMoves();
-	movegen_pawnpush(eng_curPosition());
+	movegen_pawn(eng_curPosition());
+	movegen_king(eng_curPosition());
+	movegen_knight(eng_curPosition());
 	printMoves(eng_curPosition(),&g_moveList);
 }
 
