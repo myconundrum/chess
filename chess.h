@@ -33,6 +33,7 @@
 */
 
 typedef enum {
+	
 	H1,G1,F1,E1,D1,C1,B1,A1,
 	H2,G2,F2,E2,D2,C2,B2,A2,
 	H3,G3,F3,E3,D3,C3,B3,A3,
@@ -41,6 +42,7 @@ typedef enum {
 	H6,G6,F6,E6,D6,C6,B6,A6,
 	H7,G7,F7,E7,D7,C7,B7,A7,
 	H8,G8,F8,E8,D8,C8,B8,A8
+
 } SQUARES;
 
 // From white's perspective
@@ -80,6 +82,8 @@ extern uint64_t FRMASKS[8][8];
 #define WHITE 0
 #define BLACK 1
 
+#define OPPONENT(c) (c == WHITE ? BLACK : WHITE)
+
 typedef enum {H=0,G=1,F=2,E=3,D=4,C=5,B=6,A=7,FMAX=8} FILES;
 typedef enum {PAWN = 1,KNIGHT,BISHOP,ROOK,QUEEN,KING,PMAX} PIECES;
 
@@ -102,17 +106,16 @@ typedef struct {
 
 } POSITION;
 
-
-
-typedef enum {MT_NORMAL=0,MT_ENPASSANT=1,MT_CAPTURE=2} MOVETYPES;
-
 typedef struct {
 
-	uint8_t from 	: 6;
-	uint8_t to 		: 6; 
-	uint8_t color 	: 1;
-	uint8_t piece 	: 3;
-	uint8_t type 	: 3;
+	uint8_t from 			: 6; // from square
+	uint8_t to 				: 6; // to square
+	uint8_t color 			: 1; // color making the move
+	uint8_t piece 			: 3; // piece moving
+	uint8_t capture         : 3; // zero if no capture, otherwise piece
+	uint8_t epCapture		: 1; // captured en passant
+	uint8_t epMove			: 1; // en passant move
+	uint8_t promotion 	    : 3; // zero if not a promotion, otherwise promo piece
 
 } MOVE;
 

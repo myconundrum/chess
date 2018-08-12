@@ -92,55 +92,19 @@ void eng_loadFEN(char *fen) {
 
 }
 
-/*
-void eng_loadFEN(char * fen) {
-
-	memset(&g_position,0,sizeof(g_position));
-	int sq = 63;
-	char *p = fen;
-
-	while (sq > -1 && p && *p) {
-		if (isdigit(*p)) {
-			sq -= *p - '0';
-		} else if (isalpha(*p)) {
-			switch (*p) {
-				case 'p': g_position.pieces[BLACK][PAWN] |= SQUAREMASKS[sq--]; break;
-				case 'P': g_position.pieces[WHITE][PAWN] |= SQUAREMASKS[sq--]; break;
-				case 'n': g_position.pieces[BLACK][KNIGHT] |= SQUAREMASKS[sq--]; break;
-				case 'N': g_position.pieces[WHITE][KNIGHT] |= SQUAREMASKS[sq--]; break;
-				case 'r': g_position.pieces[BLACK][ROOK] |= SQUAREMASKS[sq--]; break;
-				case 'R': g_position.pieces[WHITE][ROOK] |= SQUAREMASKS[sq--]; break;
-				case 'b': g_position.pieces[BLACK][BISHOP] |= SQUAREMASKS[sq--]; break;
-				case 'B': g_position.pieces[WHITE][BISHOP] |= SQUAREMASKS[sq--]; break;
-				case 'q': g_position.pieces[BLACK][QUEEN] |= SQUAREMASKS[sq--]; break;
-				case 'Q': g_position.pieces[WHITE][QUEEN] |= SQUAREMASKS[sq--]; break;
-				case 'k': g_position.pieces[BLACK][KING] |= SQUAREMASKS[sq--]; break;
-				case 'K': g_position.pieces[WHITE][KING] |= SQUAREMASKS[sq--]; break;
-				break; 
-				default: printf("invalid fen char %c.\n",*p);
-				break;
-			}
-		}
-		p++;
-	}
-
-
-
-	for (PIECES piece = PAWN; piece < PMAX; piece++) {
-		g_position.sides[BLACK] |= g_position.pieces[BLACK][piece];
-		g_position.sides[WHITE] |= g_position.pieces[WHITE][piece];
-	}
-	g_position.all = g_position.sides[BLACK] | g_position.sides[WHITE];
-}
-
-*/
 
 void eng_initPosition() {
 
 	//eng_loadFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
 	//eng_loadFEN("rnbqkbnr/pppppppp/8/8/8/1p1p1p1p/PPPPPPPP/RNBQKBNR");
 	//eng_loadFEN("8/8/8/8/8/5p2/4P3/8");
-	eng_loadFEN("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
+	//eng_loadFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2");
+	//eng_loadFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2");
+	//eng_loadFEN("2r3k1/1q1nbppp/r3p3/3pP3/pPpP4/P1Q2N2/2RN1PPP/2R4K b - b3 0 23");
+	eng_loadFEN("4qk2/1PPP3P/8/8/8/8/8/8 w - - 0 23");
+		
+
+	
 }
 
 void eng_init() {

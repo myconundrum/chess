@@ -127,12 +127,22 @@ int bitScanForward(uint64_t bb) {
 void printMoves(POSITION *pos, MOVELIST * moves) {
 	
 	for (int i = 0; moves && i < moves->count; i++) {
-		printf(
-			"%c%s%c%s\n",
-			(moves->moves[i].piece == PAWN) ? ' ' : toupper(g_pieceNames[moves->moves[i].piece]),
-			g_squareNames[moves->moves[i].from],
-			moves->moves[i].type == MT_CAPTURE ? 'x' : '-',
-			g_squareNames[moves->moves[i].to]);
+
+		if (moves->moves[i].piece != PAWN) {
+			printf("%c",toupper(g_pieceNames[moves->moves[i].piece]));
+		}
+		printf("%s",g_squareNames[moves->moves[i].from]);
+		if (moves->moves[i].capture || moves->moves[i].epCapture) {
+			printf("x");
+		}
+		printf("%s",g_squareNames[moves->moves[i].to]);
+		if (moves->moves[i].epCapture) {
+			printf("ep");
+		}
+		if (moves->moves[i].promotion) {
+			printf("=%c",toupper(g_pieceNames[moves->moves[i].promotion]));
+		}
+		printf("\n");
 	}
 }
 
@@ -141,6 +151,18 @@ void printPosition(POSITION *p) {
 
 	printf("**POSITION DUMP**\n");
 	printf("%s to move.\n",p->toMove == WHITE ? "White" : "Black");
+	if (p->kCastle[BLACK]) {
+		printf("Black can castle kingside.\n");
+	}
+	if (p->qCastle[BLACK]) {
+		printf("Black can castle queenside.\n");
+	}
+	if (p->qCastle[WHITE]) {
+		printf("White can castle queenside.\n");
+	}
+	if (p->kCastle[WHITE]) {
+		printf("White can castle kingside.\n");
+	}
 	printf("%d half moves and %d full moves.\n",p->halfMoves,p->fullMoves);
 	if (p->ep) {
 		printf("%s is en passant square\n",g_squareNames[bitScanForward(p->ep)]);
