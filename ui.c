@@ -22,7 +22,7 @@ void cmd_dumpPosition(char * str) {printPosition(eng_curPosition());}
 void cmd_dumpFEN(char *str) {positionToFEN(eng_curPosition(),false);}
 void cmd_dumpFENURL(char * str) {positionToFEN(eng_curPosition(),true);}
 
-void cmd_testMove(char *str) {movegen_generate();}
+void cmd_testMove(char *str) {movegen_generate(eng_curPosition());}
 
 void cmd_help(char * str);
 

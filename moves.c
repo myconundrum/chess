@@ -110,118 +110,24 @@ void movegen_knight(POSITION *pos) {
 	}
 }
 
-/*
-uint64_t movegen_getFileAttacks(POSITION *pos, uint8_t sq) {
+uint64_t movegen_getFileMoves(POSITION * pos, uint8_t sq) {
 
-   uint8_t file = sq & 7;
-   uint8_t occ = AFILE_MASK & (pos->all >> file);
-   occ = (B1H7_MASK *  occ) >> 58;
-   occ = A1H8_MASK * g_rankMoves[(sq^56)>>3][occ];
-   return  (HFILE_MASK &  occ) >> (file^7);
-}
-*/
+	uint8_t  file = FILEFROMSQUARE(sq);
+	uint64_t occ = AFILE_MASK & (pos->all >> file);
+	uint64_t m;
 
-
-/*
-def get_file_moves_bb(i, occ):
-    """
-    i is index of square
-    occ is the combined occupancy of the board
-    """
-    f = i & np.uint8(7)
-    # Shift to A file
-    occ = tables.FILES[File.A] & (occ >> f)
-    # Map occupancy and index to first rank
-    occ = (tables.A1H8_DIAG * occ) >> np.uint8(56)
-    first_rank_index = (i ^ np.uint8(56)) >> np.uint8(3)
-    # Lookup moveset and map back to H file
-    occ = tables.A1H8_DIAG * tables.FIRST_RANK_MOVES[first_rank_index][occ]
-    # Isolate H file and shift back to original file
-    return (tables.FILES[File.H] & occ) >> (f ^ np.uint8(7))
-*/
-/*
-uint64_t movegen_getFileAttacks(POSITION *pos, uint8_t sq) {
-
-	uint8_t file = sq & 7;
-	uint8_t firstRank;
-	uint64_t occ = AFILE_MASK & (pos->all << (file ^ 7));
-
-
-
+	// map file to the 1st rank.
 	occ = (occ * A1H8_MASK) >> 56;
 
+	// map the rook position to the position on the 1st rank and look up the rank.
+	m = g_rankMoves[(sq ^ 56) >> 3][occ];
 
-	firstRank = 7^((sq ^ 56) >> 3);
-
-	printf("1st rank...\n");
-	printBitboard(g_rankMoves[firstRank][occ]);
-	printf("times diag...\n");
-	printBitboard(A1H8_MASK);
-	printf("equals...\n");
-	printBitboard(B1H7_MASK  * g_rankMoves[firstRank][occ]);
-
-	occ = A1H8_MASK * (uint64_t) g_rankMoves[firstRank][occ];
-
-
-
-
-
-
-	occ = (occ & HFILE_MASK & occ) << (file);
-	printf("well...\n");
-	printBitboard(occ);
-
-	return occ;
-
-
+	// map back to the right file and return
+	return (HFILE_MASK & (m * A1H8_MASK)) >> (file ^ 7); 
 }
 
-*/
-/*
 
-
-uint64_t movegen_getFileAttacksOld(POSITION *pos, uint8_t sq) {
-
-	uint8_t file = sq & 7;
-	uint64_t occ = AFILE_MASK & (pos->all << (file^7));
-	uint64_t moves;
-
-	printf ("file: %d\n",file);
-	printBitboard(FILEMASKS[file] & pos->all);
-
-	printf ("shifted to A file...\n");
-	printBitboard(occ);
-
-	occ = (occ * A1H8_MASK) >> 56;
-	printf ("shifted to rank 1\n");
-	printBitboard(occ);
-
-	printf("index on rank %d\n",7 - ((sq^56) >> 3));
-	printf("occ %x\n",(uint8_t) occ);
-	
-	moves =g_rankMoves[7 ^ ((sq^56) >> 3)][occ];
-
-	printf("moves from lookup\n");
-	printBitboard(moves);
-
-	moves = (moves * A1H8_MASK) << 56;
-
-	printf("garbage\n");
-	printBitboard(moves);
-
-	printf("masked to h file\n"); 
-	printBitboard(moves & HFILE_MASK);
-
-
-	moves = (HFILE_MASK & moves) << file;
-	printf("moves transformed");
-	printBitboard(moves);
-
-
-	return moves;
-}
-*/
-uint64_t movegen_getRankAttacks(POSITION *pos, uint8_t sq) {
+uint64_t movegen_getRankMoves(POSITION *pos, uint8_t sq) {
 
    uint8_t file = sq & 7;
    uint8_t rank = sq >> 3;
@@ -229,43 +135,119 @@ uint64_t movegen_getRankAttacks(POSITION *pos, uint8_t sq) {
    return ((uint64_t) g_rankMoves[file][(uint8_t )(pos->all >> (8*rank))] )<< (8*rank);
 }
 
+uint64_t movegen_getDiagonalMoves(POSITION *pos, uint8_t sq) {
 
-void movegen_rook(POSITION *pos) {
+ 	uint8_t file = sq & 7;
 
-	uint64_t rooks = pos->pieces[pos->toMove][ROOK];
+ 	// map diagonal in question to first rank.
+ 	uint64_t occ = ((DIAGONALMASKS[sq] & pos->all) * AFILE_MASK) >> 56;
+ 	// look up on first rank moves and then transform back to diagonal.
+ 	uint64_t md = g_rankMoves[file][occ] * AFILE_MASK;
+ 	uint64_t mad;
+ 	occ = ((ANTIDIAGONALMASKS[sq] & pos->all) * AFILE_MASK) >> 56;
+ 	mad = g_rankMoves[file][occ] * AFILE_MASK;
+
+ 	return   (md  & DIAGONALMASKS[sq]) | (mad & ANTIDIAGONALMASKS[sq]);
+
+}
+
+/*
+def get_diag_moves_bb(i, occ):
+    """
+    i is index of square
+    occ is the combined occupancy of the board
+    """
+    f = i & np.uint8(7)
+    occ = tables.DIAG_MASKS[i] & occ # isolate diagonal occupancy
+    occ = (tables.FILES[File.A] * occ) >> np.uint8(56) # map to first rank
+    occ = tables.FILES[File.A] * tables.FIRST_RANK_MOVES[f][occ] # lookup and map back to diagonal
+    return tables.DIAG_MASKS[i] & occ
+
+
+def get_antidiag_moves_bb(i, occ):
+    """
+    i is index of square
+    occ is the combined occupancy of the board
+    """
+    f = i & np.uint8(7)
+    occ = tables.ANTIDIAG_MASKS[i] & occ # isolate antidiagonal occupancy
+    occ = (tables.FILES[File.A] * occ) >> np.uint8(56) # map to first rank
+    occ = tables.FILES[File.A] * tables.FIRST_RANK_MOVES[f][occ] # lookup and map back to antidiagonal
+    return tables.ANTIDIAG_MASKS[i] & occ
+
+*/
+
+void movegen_sliderDiagonal(POSITION *pos, PIECES piece) {
+
+	uint64_t sliders = pos->pieces[pos->toMove][piece];
 	uint8_t from, to;
 	uint64_t m;
 	uint64_t opp  = pos->sides[OPPONENT(pos->toMove)];
 	uint64_t self = pos->sides[pos->toMove]; 
 
-	while (rooks) {
+	while (sliders) {
 
-		from = bitScanForward(rooks); 
-		rooks ^= SQUAREMASKS[from];
+		from = bitScanForward(sliders); 
+		sliders ^= SQUAREMASKS[from];
 
-		m = movegen_getRankAttacks(pos,from);
+		m = movegen_getDiagonalMoves(pos,from);
 		while (m) {
 			
 			to = bitScanForward(m);
 			m ^= SQUAREMASKS[to];
 
 			if ((SQUAREMASKS[to] & self) == 0) {
-				movegen_addMove(pos->toMove,ROOK,from,to,SQUAREMASKS[to] & opp);
+				movegen_addMove(pos->toMove,piece,from,to,SQUAREMASKS[to] & opp);
 			}
 		}
+	}
+}
 
-		//m = movegen_getFileAttacks(pos,from);
-			while (m) {
+void movegen_sliderFileRank(POSITION *pos,PIECES piece) {
+
+	uint64_t sliders = pos->pieces[pos->toMove][piece];
+	uint8_t from, to;
+	uint64_t m;
+	uint64_t opp  = pos->sides[OPPONENT(pos->toMove)];
+	uint64_t self = pos->sides[pos->toMove]; 
+
+	while (sliders) {
+
+		from = bitScanForward(sliders); 
+		sliders ^= SQUAREMASKS[from];
+
+		m = movegen_getRankMoves(pos,from);
+		while (m) {
 			
 			to = bitScanForward(m);
 			m ^= SQUAREMASKS[to];
 
 			if ((SQUAREMASKS[to] & self) == 0) {
-				movegen_addMove(pos->toMove,ROOK,from,to,SQUAREMASKS[to] & opp);
+				movegen_addMove(pos->toMove,piece,from,to,SQUAREMASKS[to] & opp);
+			}
+		}
+
+		m = movegen_getFileMoves(pos,from);
+		while (m) {
+			
+			to = bitScanForward(m);
+			m ^= SQUAREMASKS[to];
+
+			if ((SQUAREMASKS[to] & self) == 0) {
+				movegen_addMove(pos->toMove,piece,from,to,SQUAREMASKS[to] & opp);
 			}
 		}
 	}
 }
+
+
+void movegen_queen(POSITION *pos) {
+	movegen_sliderDiagonal(pos,QUEEN);
+	movegen_sliderFileRank(pos,QUEEN);
+}
+
+void movegen_bishop(POSITION *pos) {movegen_sliderDiagonal(pos,BISHOP);}
+void movegen_rook(POSITION *pos) {movegen_sliderFileRank(pos,ROOK);}
 
 void movegen_blackPawn(POSITION *pos) {
 
@@ -393,109 +375,7 @@ void movegen_pawn(POSITION *pos) {
 	}
 }
 
-void movegen_pawn_old(POSITION *pos) {
-
-	// m1 -- candidate 1 move pawn pushes
-	// m2 -- candidate 2 move pawn pushes
-	// mal -- candidate left attacks
-	// mar -- candidate right attacks
-	// mal -- candidate left ep attacks
-	// mar -- candidate right ep attacks
-
-	// remove pawns that are on the last rank, so that we don't overflow.
-	uint64_t m1 = pos->pieces[pos->toMove][PAWN] & ~RANKMASKS[pos->toMove == WHITE ? 7 : 0];
-	uint64_t m2,mal,mar,malep,marep;
-	int sq;
-
-	// 1 move forward pawn pushes.
-	m1 = pos->toMove == WHITE ? SHIFTNORTH(m1) : SHIFTSOUTH(m1);
-	mal = m1 & ~FILEMASKS[pos->toMove==WHITE ? A : H];
-	mar = m1 & ~FILEMASKS[pos->toMove==WHITE ? H : A];
-
-	// only if the new square is unoccupied
-	m1 &= ~pos->all;
-	
-	// check for candidate pawns that could do a starting move double push. These are pawns
-	// that could move forward one (m1) and are now on the 3rd rank.
-	m2 = m1 & RANKMASKS[pos->toMove==WHITE ? 2 : 5];
-	m2 = pos->toMove == WHITE ? SHIFTNORTH(m2) : SHIFTSOUTH(m2);
-	m2 &= ~pos->all;
-
-
-	// check for left attacks (cleared out the leftmost file above)
-	mal = SHIFTWEST(mal);
-	malep = mal;
-	mal &= pos->sides[pos->toMove ? 0 : 1];
-	printf("malep before mask\n");
-	printBitboard(malep);
-	malep &= pos->ep;
-	printf("malep\n");
-	printBitboard(malep);
-	
-	// check for right attacks (cleared out the rightmost file above)
-	mar = SHIFTEAST(mar);
-	marep = mar;
-	mar &= pos->sides[pos->toMove ? 0 : 1];
-	printf("marep before mask\n");
-	printBitboard(marep);
-	marep &= pos->ep;
-	printf("marep\n");
-	printBitboard(marep);
-	
-	// add candidate moves to movelist.
-	while(m1) {
-		sq = bitScanForward(m1);
-		m1 ^= SQUAREMASKS[sq];
-		movegen_addPawnMove(pos->toMove,PAWN,pos->toMove == WHITE ? sq + SOUTH : sq + NORTH, sq, false, false, false);
-	}
-
-	while(m2) {
-		sq = bitScanForward(m2);
-		m2 ^= SQUAREMASKS[sq];
-		movegen_addPawnMove(pos->toMove,PAWN,pos->toMove == WHITE ? sq + SOUTH + SOUTH: sq + NORTH+ NORTH, sq, false, false, true);
-	}	
-	
-	while(mal) {
-		sq = bitScanForward(mal);
-		mal ^= SQUAREMASKS[sq];
-		movegen_addPawnMove(pos->toMove,PAWN,pos->toMove == WHITE ? sq + SOUTHEAST: sq + NORTHWEST, sq, true,false,false);
-	}	
-
-	while(mar) {
-		sq = bitScanForward(mar);
-		mar ^= SQUAREMASKS[sq];
-		movegen_addPawnMove(pos->toMove,PAWN,pos->toMove == WHITE ? sq + SOUTHWEST : sq + NORTHEAST, sq,true,false,false);
-	}	
-
-	while(malep) {
-		sq = bitScanForward(malep);
-		malep ^= SQUAREMASKS[sq];
-		movegen_addPawnMove(pos->toMove,PAWN,pos->toMove == WHITE ? sq + SOUTHEAST : sq + NORTHWEST, sq, false,true,false);
-	}
-
-	while(marep) {
-		sq = bitScanForward(marep);
-		marep ^= SQUAREMASKS[sq];
-		movegen_addPawnMove(pos->toMove,PAWN,pos->toMove == WHITE ? sq + SOUTHWEST: sq + NORTHEAST, sq,false,true,false);
-	}		
-}
-
-
-
  
- /*
-U64 diagonalAttacks(U64 occ, enumSquare sq) {
-   const U64 aFile = C64(0x0101010101010101);
-   const U64 bFile = C64(0x0202020202020202);
- 
-   unsigned int f = sq & 7;
-   occ  =  diagonalMaskEx[sq] & occ;
-   occ  = (bFile * occ ) >> 58;
-   occ  =  aFile *  firstRankAttacks[f][occ];
-   return  diagonalMaskEx[sq] & occ;
-}
-
-*/
 
 MOVELIST * movegen_getMoves() {
 	return &g_moveList;
@@ -533,7 +413,6 @@ void movegen_initRankMoves() {
 			}
 		}
 	}
-
 }
 
 
@@ -556,17 +435,25 @@ void movegen_init() {
 				g_rookMoves[i] |= SQUAREMASKS[j];
 			}
 		}
+
 	}
+
+
+
 	movegen_initRankMoves();
 }
 
-void movegen_generate() {
+void movegen_generate(POSITION *pos) {
 
 	movegen_clearMoves();
-	movegen_pawn(eng_curPosition());
-	movegen_king(eng_curPosition());
-	movegen_knight(eng_curPosition());
-	movegen_rook(eng_curPosition());
+
+	movegen_king(pos);
+	movegen_queen(pos);
+	movegen_rook(pos);
+	movegen_bishop(pos);
+	movegen_knight(pos);
+	movegen_pawn(pos);
+
 	printMoves(eng_curPosition(),&g_moveList);
 }
 

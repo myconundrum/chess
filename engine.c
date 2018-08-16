@@ -9,6 +9,9 @@ uint64_t FILEMASKS[8] =
 	{AFILE_MASK,BFILE_MASK,CFILE_MASK,DFILE_MASK,EFILE_MASK,FFILE_MASK,GFILE_MASK,HFILE_MASK};
 uint64_t SQUAREMASKS[64];
 
+uint64_t DIAGONALMASKS[64];
+uint64_t ANTIDIAGONALMASKS[64];
+
 const int g_pieceValues[PMAX] = {1,3,3,5,9,999};
 
 POSITION g_position;
@@ -121,14 +124,15 @@ void eng_loadFEN(char *fen) {
 
 void eng_initPosition() {
 
-	//eng_loadFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0");
+	eng_loadFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0");
 	//eng_loadFEN("rnbqkbnr/pppppppp/8/8/8/1p1p1p1p/PPPPPPPP/RNBQKBNR b KQkq - 0 0");
 	//eng_loadFEN("K1K4N/2N5/3K4/3n2R1/8/3pKp2/4pP2/8 w - - 0 23 ");
 	//eng_loadFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2");
 	//eng_loadFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2");
-	eng_loadFEN("2r3k1/1q1nbppp/r3p3/3pP3/pPpP4/P1Q2N2/2RN1PPP/2R4K b - b3 0 23");
+	//eng_loadFEN("2r3k1/1q1nbppp/r3p3/3pP3/pPpP4/P1Q2N2/2RN1PPP/2R4K b - b3 0 23");
 	//eng_loadFEN("8/8/8/2Pp4/8/8/8/8 2 - d6 0 23");
 	//eng_loadFEN("4qk2/1PPP3P/8/8/8/8/8/8 w - - 0 23");
+	//eng_loadFEN("8/8/3r4/3R2rr/8/8/8/3R4 w - - 0 23");
 		
 }
 
@@ -138,11 +142,15 @@ void eng_initPosition() {
 */
 void eng_test() {
 
-
 }
+
 
 void eng_init() {
 	
+	memset(DIAGONALMASKS,0,sizeof(DIAGONALMASKS));
+	memset(SQUAREMASKS,0,sizeof(SQUAREMASKS));
+	memset(FRMASKS,0,sizeof(FRMASKS));
+
 	for (FILES f = A; f < FMAX; f++) {
 		for (int r = 0; r < 8; r++) {
 			FRMASKS[f][r] = BFR(f,r);
@@ -150,8 +158,31 @@ void eng_init() {
 	}
 
 	for (int i = 0; i < 64; i++) {
+		int j;
 		SQUAREMASKS[i] = BFR(FILEFROMSQUARE(i),RANKFROMSQUARE(i));
+		j = i;
+		do {
+			DIAGONALMASKS[i] |= BPOS(j);
+			j += NORTHEAST;
+		} while (j < 64 && DISTANCE(j,j-NORTHEAST) == 1);
+		j = i;
+		do {
+			ANTIDIAGONALMASKS[i] |= BPOS(j);
+			j += NORTHWEST;
+		} while (j < 64 && DISTANCE(j,j-NORTHWEST) == 1);
+		j = i;
+		do {
+			DIAGONALMASKS[i] |= BPOS(j);
+			j += SOUTHWEST;
+		} while (j >= 0 && DISTANCE(j,j-SOUTHWEST) == 1);
+		j = i;
+		do {
+			ANTIDIAGONALMASKS[i] |= BPOS(j);
+			j += SOUTHEAST;
+		} while (j >= 0 && DISTANCE(j,j-SOUTHEAST) == 1);
+
 	}
+
 
 	movegen_init();
 	eng_test();

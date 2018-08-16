@@ -108,6 +108,8 @@ extern uint64_t FILEMASKS[8];
 extern uint64_t RANKMASKS[8];
 extern uint64_t SQUAREMASKS[64];
 extern uint64_t FRMASKS[8][8];
+extern uint64_t DIAGONALMASKS[64];
+extern uint64_t ANTIDIAGONALMASKS[64];
 
 
 
@@ -157,7 +159,7 @@ void ui_update();
 
 //movegen apis
 void movegen_init();
-void movegen_generate();
+void movegen_generate(POSITION *pos);
 
 
 void eng_initPosition();
@@ -169,14 +171,11 @@ POSITION * eng_curPosition();
 
 extern const char * g_squareNames[];
 
-
-
- #define MAX(a,b)  (((a) > (b)) ? (a) : (b))
- #define MIN(a,b)  (((a) < (b)) ? (a) : (b))
- #define FILEDISTANCE(a,b) abs(((a)&7) - ((b)&7))
- #define RANKDISTANCE(a,b) abs(((a)>>3) - ((b)>>3))
- #define DISTANCE(a,b) MAX(FILEDISTANCE(a,b),RANKDISTANCE(a,b))
-
+#define MAX(a,b)  (((a) > (b)) ? (a) : (b))
+#define MIN(a,b)  (((a) < (b)) ? (a) : (b))
+#define FILEDISTANCE(a,b) abs(((a)&7) - ((b)&7))
+#define RANKDISTANCE(a,b) abs(((a)>>3) - ((b)>>3))
+#define DISTANCE(a,b) MAX(FILEDISTANCE(a,b),RANKDISTANCE(a,b))
 
 int distance(int sq1, int sq2);
 void printMoves(POSITION *pos, MOVELIST * moves);
