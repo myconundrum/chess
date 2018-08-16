@@ -6,7 +6,7 @@ uint64_t FRMASKS[8][8];
 uint64_t RANKMASKS[8] = 
 	{RANK1_MASK,RANK2_MASK,RANK3_MASK,RANK4_MASK,RANK5_MASK,RANK6_MASK,RANK7_MASK,RANK8_MASK};
 uint64_t FILEMASKS[8] = 
-	{HFILE_MASK,GFILE_MASK,FFILE_MASK,EFILE_MASK,DFILE_MASK,CFILE_MASK,BFILE_MASK,AFILE_MASK};
+	{AFILE_MASK,BFILE_MASK,CFILE_MASK,DFILE_MASK,EFILE_MASK,FFILE_MASK,GFILE_MASK,HFILE_MASK};
 uint64_t SQUAREMASKS[64];
 
 const int g_pieceValues[PMAX] = {1,3,3,5,9,999};
@@ -16,46 +16,73 @@ POSITION * eng_curPosition() {return &g_position;}
 
 void eng_loadFEN(char *fen) {
 
-	char pieces[100];
+	char buf[256];
+	char * p;
+	char * end;
+	char * ranks[8];
+	int i = 7;
 	char toMove[5];
 	char castle[20];
 	char ep[20];
 	int  halfMoves;
 	int  fullMoves;
-	char *p;
-	int sq = 63;
-	int epFile;
-	int epRank;
+	int  epFile;
+	int  epRank;
 
-	if(!fen) {return;}
+	strcpy(buf,fen);
+	
+	if (!fen) {return;} 
 
-	sscanf(fen,"%s %s %s %s %d %d",pieces,toMove,castle,ep,&halfMoves,&fullMoves);
 
-	/** Manage Pieces **/
-	p = pieces;
-	while (sq > -1 && p && *p) {
-		if (isdigit(*p)) {
-			sq -= *p - '0';
-		} else if (isalpha(*p)) {
-			switch (*p) {
-				case 'p': g_position.pieces[BLACK][PAWN] |= SQUAREMASKS[sq--]; break;
-				case 'P': g_position.pieces[WHITE][PAWN] |= SQUAREMASKS[sq--]; break;
-				case 'n': g_position.pieces[BLACK][KNIGHT] |= SQUAREMASKS[sq--]; break;
-				case 'N': g_position.pieces[WHITE][KNIGHT] |= SQUAREMASKS[sq--]; break;
-				case 'r': g_position.pieces[BLACK][ROOK] |= SQUAREMASKS[sq--]; break;
-				case 'R': g_position.pieces[WHITE][ROOK] |= SQUAREMASKS[sq--]; break;
-				case 'b': g_position.pieces[BLACK][BISHOP] |= SQUAREMASKS[sq--]; break;
-				case 'B': g_position.pieces[WHITE][BISHOP] |= SQUAREMASKS[sq--]; break;
-				case 'q': g_position.pieces[BLACK][QUEEN] |= SQUAREMASKS[sq--]; break;
-				case 'Q': g_position.pieces[WHITE][QUEEN] |= SQUAREMASKS[sq--]; break;
-				case 'k': g_position.pieces[BLACK][KING] |= SQUAREMASKS[sq--]; break;
-				case 'K': g_position.pieces[WHITE][KING] |= SQUAREMASKS[sq--]; break;
-				break; 
-				default: printf("invalid fen char %c.\n",*p);
-				break;
+	p = buf;
+	do {
+		end = strchr(p,'/');
+		if (end) {
+			*end = 0;
+			ranks[i--] = p;
+			p = ++end;
+		} else {
+			end = strchr(p,' ');
+			if (end) {
+				*end = 0;
+				ranks[i--] = p;
+				p = ++end;
+				end = 0;
 			}
 		}
-		p++;
+	} while (end != 0);
+
+	sscanf(p,"%s %s %s %d %d",toMove,castle,ep,&halfMoves,&fullMoves);
+
+	for (int r = 0; r < 8; r++) {
+		p = ranks[r];
+		int f = 0;
+
+		while (p && *p) {
+			
+			if (isdigit(*p)) {
+				f += (*p - '0');
+			} else if (isalpha(*p)) {
+				switch(*p) {
+					printf("%c at %d %d\n",*p,f,r);
+					case 'p': g_position.pieces[BLACK][PAWN] |= FRMASKS[f++][r]; break;
+					case 'P': g_position.pieces[WHITE][PAWN] |= FRMASKS[f++][r]; break;
+					case 'n': g_position.pieces[BLACK][KNIGHT] |= FRMASKS[f++][r]; break;
+					case 'N': g_position.pieces[WHITE][KNIGHT] |= FRMASKS[f++][r]; break;
+					case 'r': g_position.pieces[BLACK][ROOK] |= FRMASKS[f++][r]; break;
+					case 'R': g_position.pieces[WHITE][ROOK] |= FRMASKS[f++][r]; break;
+					case 'b': g_position.pieces[BLACK][BISHOP] |= FRMASKS[f++][r]; break;
+					case 'B': g_position.pieces[WHITE][BISHOP] |= FRMASKS[f++][r]; break;
+					case 'q': g_position.pieces[BLACK][QUEEN] |= FRMASKS[f++][r]; break;
+					case 'Q': g_position.pieces[WHITE][QUEEN] |= FRMASKS[f++][r]; break;
+					case 'k': g_position.pieces[BLACK][KING] |= FRMASKS[f++][r]; break;
+					case 'K': g_position.pieces[WHITE][KING] |= FRMASKS[f++][r]; break;
+					default: printf("invalid fen char %c.\n",*p);
+					break;
+				}
+			}
+			p++;
+		}
 	}
 
 	for (PIECES piece = PAWN; piece < PMAX; piece++) {
@@ -81,7 +108,7 @@ void eng_loadFEN(char *fen) {
 
 	/**Manage ep squares**/
 	if (*ep && *ep != '-') {
-		epFile = 'h' - ep[0];
+		epFile = ep[0] - 'a';
 		epRank = ep[1] - '0';
 		epRank--;
 		g_position.ep = FRMASKS[epFile][epRank];
@@ -89,35 +116,43 @@ void eng_loadFEN(char *fen) {
 
 	g_position.halfMoves = halfMoves;
 	g_position.fullMoves = fullMoves;
-
 }
 
 
 void eng_initPosition() {
 
-	//eng_loadFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
-	//eng_loadFEN("rnbqkbnr/pppppppp/8/8/8/1p1p1p1p/PPPPPPPP/RNBQKBNR");
-	eng_loadFEN("K1K4N/2N5/3K4/5N2/8/3pKp2/4pP2/8 w - - 0 23");
+	//eng_loadFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0");
+	//eng_loadFEN("rnbqkbnr/pppppppp/8/8/8/1p1p1p1p/PPPPPPPP/RNBQKBNR b KQkq - 0 0");
+	//eng_loadFEN("K1K4N/2N5/3K4/3n2R1/8/3pKp2/4pP2/8 w - - 0 23 ");
 	//eng_loadFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2");
 	//eng_loadFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2");
-	//eng_loadFEN("2r3k1/1q1nbppp/r3p3/3pP3/pPpP4/P1Q2N2/2RN1PPP/2R4K b - b3 0 23");
+	eng_loadFEN("2r3k1/1q1nbppp/r3p3/3pP3/pPpP4/P1Q2N2/2RN1PPP/2R4K b - b3 0 23");
+	//eng_loadFEN("8/8/8/2Pp4/8/8/8/8 2 - d6 0 23");
 	//eng_loadFEN("4qk2/1PPP3P/8/8/8/8/8/8 w - - 0 23");
 		
+}
 
-	
+
+/*
+	used for validation tests during development.
+*/
+void eng_test() {
+
+
 }
 
 void eng_init() {
 	
-	for (FILES f = H; f < FMAX; f++) {
+	for (FILES f = A; f < FMAX; f++) {
 		for (int r = 0; r < 8; r++) {
 			FRMASKS[f][r] = BFR(f,r);
 		}
 	}
 
 	for (int i = 0; i < 64; i++) {
-		SQUAREMASKS[i] = BPOS(i);
+		SQUAREMASKS[i] = BFR(FILEFROMSQUARE(i),RANKFROMSQUARE(i));
 	}
 
 	movegen_init();
+	eng_test();
 }

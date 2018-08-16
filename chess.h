@@ -9,51 +9,49 @@
 #include <stdbool.h>
 
 
-/*
-  ==bitboard mapping convention==
+/** 
+ bitboard mapping convention for our chess engine is LERF mapping (Little Endian Rank File Mapping)
 
-    A  B  C  D  E  F  G  H 
+	Rank 1 to Rank 7 is 0 -> 7
+	File A to File H is 0 -> 7
+
+   	A  B  C  D  E  F  G  H 
     -  -  -  -  -  -  -  - 
-8 | 63 62 61 60 59 58 57 56
+8 | 56 57 58 59 60 61 62 63
+7 | 48 49 50 51 52 53 54 55
+6 | 40 41 42 43 44 45 46 47
+5 | 32 33 34 35 36 37 38 39
+4 | 24 25 26 27 28 29 30 31
+3 | 16 17 18 19 20 21 22 23
+2 | 08 09 10 11 12 13 14 15
+1 | 00 01 02 03 04 05 06 07
 
-7 | 55 54 53 52 51 50 49 48
 
-6 | 47 46 45 44 43 42 41 40
+a-file             0x0101010101010101
+h-file             0x8080808080808080
+1st rank           0x00000000000000FF
+8th rank           0xFF00000000000000
+a1-h8 diagonal     0x8040201008040201
+h1-a8 antidiagonal 0x0102040810204080
+light squares      0x55AA55AA55AA55AA
+dark squares       0xAA55AA55AA55AA55
 
-5 | 39 38 37 36 35 34 33 32
 
-4 | 31 30 29 28 27 26 25 24
-
-3 | 23 22 21 20 19 18 17 16 
-
-2 | 15 14 13 12 11 10 09 08
-
-1 | 07 06 05 04 03 02 01 00
-
-*/
+**/
 
 typedef enum {
 
-	H1,G1,F1,E1,D1,C1,B1,A1,
-	H2,G2,F2,E2,D2,C2,B2,A2,
-	H3,G3,F3,E3,D3,C3,B3,A3,
-	H4,G4,F4,E4,D4,C4,B4,A4,
-	H5,G5,F5,E5,D5,C5,B5,A5,
-	H6,G6,F6,E6,D6,C6,B6,A6,
-	H7,G7,F7,E7,D7,C7,B7,A7,
-	H8,G8,F8,E8,D8,C8,B8,A8
+	A1, B1, C1, D1, E1, F1, G1, H1,
+	A2, B2, C2, D2, E2, F2, G2, H2,
+	A3, B3, C3, D3, E3, F3, G3, H3, 
+	A4, B4, C4, D4, E4, F4, G4, H4, 
+	A5, B5, C5, D5, E5, F5, G5, H5,
+	A6, B6, C6, D6, E6, F6, G6, H6,
+	A7, B7, C7, D7, E7, F7, G7, H7, 
+	A8, B8, C8, D8, E8, F8, G8, H8
 
 } SQUARES;
 
-// From white's perspective
-#define NORTH(sq) 			sq << 8
-#define SOUTH(sq) 			sq >> 8
-#define EAST(sq)  			sq >> 1
-#define WEST(sq)  			sq << 1
-#define NORTHEAST(sq)       sq << 7
-#define NORTHWEST(sq) 		sq << 9
-#define SOUTHEAST(sq)       sq >> 9
-#define SOTHWEST(sq) 		sq >> 7
 
 
 #define RANK1_MASK 0x00000000000000FFull
@@ -65,34 +63,54 @@ typedef enum {
 #define RANK7_MASK 0x00FF000000000000ull
 #define RANK8_MASK 0xFF00000000000000ull
 
-#define AFILE_MASK 0x8080808080808080ull
-#define BFILE_MASK 0x4040404040404040ull
-#define CFILE_MASK 0x2020202020202020ull
-#define DFILE_MASK 0x1010101010101010ull
-#define EFILE_MASK 0x0808080808080808ull
-#define FFILE_MASK 0x0404040404040404ull
-#define GFILE_MASK 0x0202020202020202ull
-#define HFILE_MASK 0x0101010101010101ull
+
+
+#define AFILE_MASK 0x0101010101010101ull
+#define BFILE_MASK 0x0202020202020202ull
+#define CFILE_MASK 0x0404040404040404ull
+#define DFILE_MASK 0x0808080808080808ull
+#define EFILE_MASK 0x1010101010101010ull
+#define FFILE_MASK 0x2020202020202020ull
+#define GFILE_MASK 0x4040404040404040ull
+#define HFILE_MASK 0x8080808080808080ull
+#define A1H8_MASK  0x8040201008040201ull
+
+
+typedef enum {NORTH=8,SOUTH=-8,EAST=1,WEST=-1,NORTHEAST=9,NORTHWEST=7,SOUTHEAST=-7,SOUTHWEST=-9} CARDINALS;
+#define SHIFTNORTH(bb) 		((bb) << 8)
+#define SHIFTNORTHEAST(bb)	((bb) << 9)
+#define SHIFTNORTHWEST(bb)  ((bb) << 7)
+#define SHIFTWEST(bb)		((bb) >> 1)
+#define SHIFTEAST(bb) 		((bb) << 1)
+#define SHIFTSOUTH(bb)		((bb) >> 8)
+#define SHIFTSOUTHWEST(bb)  ((bb) >> 9)
+#define SHIFTSOUTHEAST(bb)  ((bb) >> 7)
+	
+
+
+typedef enum {A,B,C,D,E,F,G,H,FMAX} FILES;
+typedef enum {PAWN = 1,KNIGHT,BISHOP,ROOK,QUEEN,KING,PMAX} PIECES;
+
+#define WHITE 0
+#define BLACK 1
+
+#define OPPONENT(c) (c == WHITE ? BLACK : WHITE)
+#define FILEFROMSQUARE(sq)  ((sq) & 7)
+#define RANKFROMSQUARE(sq)  ((sq) >> 3)
+
+
+#define BFR(f,r) (0x01ull << ((f) + 8*(r)))
+#define BPOS(p)  (0x01ull << (p))	
+
+
 
 extern uint64_t FILEMASKS[8];
 extern uint64_t RANKMASKS[8];
 extern uint64_t SQUAREMASKS[64];
 extern uint64_t FRMASKS[8][8];
 
-#define WHITE 0
-#define BLACK 1
-
-#define OPPONENT(c) (c == WHITE ? BLACK : WHITE)
 
 
-#define FILEFROMSQUARE(sq)  (sq & 7)
-#define RANKFROMSQUARE(sq)  (sq >> 3)
-
-typedef enum {H=0,G=1,F=2,E=3,D=4,C=5,B=6,A=7,FMAX=8} FILES;
-typedef enum {PAWN = 1,KNIGHT,BISHOP,ROOK,QUEEN,KING,PMAX} PIECES;
-
-#define BFR(f,r) 0x01ull << (f + 8*r);
-#define BPOS(p)  0x01ull << p;
 
 
 typedef struct {
@@ -148,6 +166,10 @@ POSITION * eng_curPosition();
 
 
 //util apis
+
+extern const char * g_squareNames[];
+
+
 
  #define MAX(a,b)  (((a) > (b)) ? (a) : (b))
  #define MIN(a,b)  (((a) < (b)) ? (a) : (b))

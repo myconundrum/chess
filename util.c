@@ -4,19 +4,19 @@
 const char g_pieceNames[PMAX+1] = {'*','p','n','b','r','q','k'};
 
 const char * g_squareNames[] = {
-	"h1","g1","f1","e1","d1","c1","b1","a1",
-	"h2","g2","f2","e2","d2","c2","b2","a2",
-	"h3","g3","f3","e3","d3","c3","b3","a3",
-	"h4","g4","f4","e4","d4","c4","b4","a4",
-	"h5","g5","f5","e5","d5","c5","b5","a5",
-	"h6","g6","f6","e6","d6","c6","b6","a6",
-	"h7","g7","f7","e7","d7","c7","b7","a7",
-	"h8","g8","f8","e8","d8","c8","b8","a8"
+
+	"a1","b1","c1","d1","e1","f1","g1","h1",
+	"a2","b2","c2","d2","e2","f2","g2","h2",
+	"a3","b3","c3","d3","e3","f3","g3","h3",
+	"a4","b4","c4","d4","e4","f4","g4","h4",
+	"a5","b5","c5","d5","e5","f5","g5","h5",
+	"a6","b6","c6","d6","e6","f6","g6","h6",
+	"a7","b7","c7","d7","e7","f7","g7","h7",
+	"a8","b8","c8","d8","e8","f8","g8","h8"
 };
 
-
 void printBitboard(uint64_t bb) {
-
+	
 	uint64_t mask = 0x01ull << 63;
 	while (mask) {
 		printf("%c",mask & bb ? '1' : '0');
@@ -24,26 +24,25 @@ void printBitboard(uint64_t bb) {
 	}
 	puts("");
 
-	printf("\n    ");
-	for (int f = A; f >= H; f--) {
-		printf(" %c |",'H' - f);
+	printf("\n   ");
+	for (int f = 0; f <  8; f++) {
+		printf("  %c ",'A' + f);
 	}
-	printf("\n");
+	printf("\n   ---------------------------------\n");
 	for (int r = 7; r >=0 ; r--) {
-		printf("%d: |",r+1);
-		for (int f = A; f >= H; f--) {
+		printf("%d  |",r+1);
+		for (int f = 0; f <8; f++) {
 
-			if (bb & FRMASKS[f][r]) {
+			if (bb & BFR(f,r)) {
 				printf(" * |");
 			} else {
 				printf("   |");
 			}
 		}
-		printf("\n");
+		printf("\n   ---------------------------------\n");
 	}	
+
 }
-
-
 
 const char getPieceNameAtBit(POSITION *pos, uint64_t bit) {
 
@@ -64,7 +63,7 @@ const char getPieceNameAtFileAndRank(POSITION * pos, int file, int rank) {
 
 void positionToFEN(POSITION * p, bool asURL) {
 	
-	uint64_t mask = 0x1ull << 63;
+	uint64_t mask = 0x1ull;
 	int i = 0, emptyCount = 0, bufPos = 0;
 	char buf[256];
 	memset(buf,0,sizeof(buf));
@@ -99,7 +98,7 @@ void positionToFEN(POSITION * p, bool asURL) {
 			}	
 			emptyCount = 0;
 		}
-		mask >>= 1;
+		mask <<= 1;
 	}
 
 	if (asURL) {
@@ -108,12 +107,6 @@ void positionToFEN(POSITION * p, bool asURL) {
 	
 	printf("%s\n",buf);
 }
-
-
-int fileFromIndex(int square) {return square & 7;}
-int rankFromIndex(int square) {return square >> 3;}
-
-
 
 
 const int g_index64[64] = {
@@ -192,21 +185,20 @@ void printPosition(POSITION *p) {
 	}
 
 
-	printf("\n    ");
-	for (int f = A; f >= H; f--) {
-		printf(" %c |",'H' - f);
+	printf("\n   ");
+	for (int f = A; f < FMAX; f++) {
+		printf("  %c ",'A' + f);
 	}
-	printf("\n");
+	printf("\n   ---------------------------------\n");
 	for (int r = 7; r >=0 ; r--) {
-		printf("%d: |",r+1);
-		for (int f = A; f >= H; f--) {
-
+		printf("%d  |",r+1);
+		for (int f = A; f < FMAX; f++) {
 			if (p->all & FRMASKS[f][r]) {
 				printf(" %c |",getPieceNameAtFileAndRank(p,f,r));
 			} else {
 				printf("   |");
 			}
 		}
-		printf("\n");
+		printf("\n   ---------------------------------\n");
 	}	
 }
