@@ -5,6 +5,11 @@
 int main (int argc, char **argv) {
 
 	printf("starting Chess engine...\n");
+
+
+	DEBUG_OPEN();
+
+	DEBUG_PRINT("argc: %d\n",argc);
 	
 	eng_init();
 	eng_initPosition();
@@ -14,5 +19,6 @@ int main (int argc, char **argv) {
 		ui_update();
 	}
 
+	DEBUG_CLOSE();
 	return 0;
 }

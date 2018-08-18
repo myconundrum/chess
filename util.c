@@ -1,6 +1,9 @@
 #include "chess.h"
 
 
+
+
+
 const char g_pieceNames[PMAX+1] = {'*','p','n','b','r','q','k'};
 
 const char * g_squareNames[] = {
@@ -14,6 +17,20 @@ const char * g_squareNames[] = {
 	"a7","b7","c7","d7","e7","f7","g7","h7",
 	"a8","b8","c8","d8","e8","f8","g8","h8"
 };
+
+
+FILE * g_log;
+void debug_open() {
+
+	g_log = fopen("/Users/marcw/code/chess/chess.log","w");
+	fprintf(g_log,"Log file created.\n");
+	setbuf(g_log,NULL);
+}
+
+
+void debug_close() {
+	fclose(g_log);
+}
 
 void printBitboard(uint64_t bb) {
 	
@@ -136,10 +153,23 @@ int bitScanForward(uint64_t bb) {
    return g_index64[((bb & -bb) * debruijn64) >> 58];
 }
 
+
+
 void printMoves(POSITION *pos, MOVELIST * moves) {
 
 	
 	for (int i = 0; moves && i < moves->count; i++) {
+
+		if (moves->moves[i].kCastle) {
+			printf("O-O\n");
+			continue;
+		}
+
+
+		if (moves->moves[i].qCastle) {
+			printf("O-O-O\n");
+			continue;
+		}
 
 		if (moves->moves[i].piece != PAWN) {
 			printf("%c",toupper(g_pieceNames[moves->moves[i].piece]));
@@ -160,6 +190,50 @@ void printMoves(POSITION *pos, MOVELIST * moves) {
 		}
 		printf("\n");
 	}
+
+	DEBUG_PRINT("printmoves\n");
+}
+
+void debug_printPosition(POSITION *p) {
+
+#ifdef DEBUG
+	fprintf(g_log,"**POSITION DUMP**\n");
+	fprintf(g_log,"%s to move.\n",p->toMove == WHITE ? "White" : "Black");
+	if (p->kCastle[BLACK]) {
+		fprintf(g_log,"Black can castle kingside.\n");
+	}
+	if (p->qCastle[BLACK]) {
+		fprintf(g_log,"Black can castle queenside.\n");
+	}
+	if (p->qCastle[WHITE]) {
+		fprintf(g_log,"White can castle queenside.\n");
+	}
+	if (p->kCastle[WHITE]) {
+		fprintf(g_log,"White can castle kingside.\n");
+	}
+	fprintf(g_log,"%d half moves and %d full moves.\n",p->halfMoves,p->fullMoves);
+	if (p->ep) {
+		fprintf(g_log,"%s is en passant square\n",g_squareNames[bitScanForward(p->ep)]);
+	}
+
+
+	fprintf(g_log,"\n   ");
+	for (int f = A; f < FMAX; f++) {
+		fprintf(g_log,"  %c ",'A' + f);
+	}
+	fprintf(g_log,"\n   ---------------------------------\n");
+	for (int r = 7; r >=0 ; r--) {
+		fprintf(g_log,"%d  |",r+1);
+		for (int f = A; f < FMAX; f++) {
+			if (p->all & FRMASKS[f][r]) {
+				fprintf(g_log," %c |",getPieceNameAtFileAndRank(p,f,r));
+			} else {
+				fprintf(g_log,"   |");
+			}
+		}
+		fprintf(g_log,"\n   ---------------------------------\n");
+	}	
+#endif
 }
 
 

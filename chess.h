@@ -7,6 +7,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <stdarg.h>
 
 
 /** 
@@ -114,6 +115,24 @@ extern uint64_t ANTIDIAGONALMASKS[64];
 
 
 
+#define MAX_MOVES 218
+
+
+typedef struct {
+
+	uint8_t from 			: 6; // from square
+	uint8_t to 				: 6; // to square
+	uint8_t color 			: 1; // color making the move
+	uint8_t piece 			: 3; // piece moving
+	uint8_t capture         : 3; // zero if no capture, otherwise piece
+	uint8_t epCapture		: 1; // captured en passant
+	uint8_t epMove			: 1; // en passant move
+	uint8_t promotion 	    : 3; // zero if not a promotion, otherwise promo piece
+	uint8_t qCastle			: 1;
+	uint8_t kCastle 		: 1;
+
+} MOVE;
+
 
 typedef struct {
 
@@ -128,23 +147,12 @@ typedef struct {
 	uint16_t halfMoves;			//half moves in the position				
 	uint16_t fullMoves; 		//full moves in the position
 
+	MOVE moves[MAX_MOVES];		// potential moves in this position
+	uint8_t moveCount;			// count of actual moves
+
 } POSITION;
 
-typedef struct {
 
-	uint8_t from 			: 6; // from square
-	uint8_t to 				: 6; // to square
-	uint8_t color 			: 1; // color making the move
-	uint8_t piece 			: 3; // piece moving
-	uint8_t capture         : 3; // zero if no capture, otherwise piece
-	uint8_t epCapture		: 1; // captured en passant
-	uint8_t epMove			: 1; // en passant move
-	uint8_t promotion 	    : 3; // zero if not a promotion, otherwise promo piece
-
-} MOVE;
-
-
-#define MAX_MOVES 1024
 typedef struct {
 
 	MOVE moves[MAX_MOVES];
@@ -158,12 +166,15 @@ void ui_init();
 void ui_update();
 
 //movegen apis
+
 void movegen_init();
 void movegen_generate(POSITION *pos);
 
 
 void eng_initPosition();
 void eng_init();
+void eng_loadFEN();
+MOVE * eng_bestMove();
 POSITION * eng_curPosition();
 
 
@@ -176,6 +187,26 @@ extern const char * g_squareNames[];
 #define FILEDISTANCE(a,b) abs(((a)&7) - ((b)&7))
 #define RANKDISTANCE(a,b) abs(((a)>>3) - ((b)>>3))
 #define DISTANCE(a,b) MAX(FILEDISTANCE(a,b),RANKDISTANCE(a,b))
+
+void debug_open();
+void debug_close();
+void debug_printPosition();
+extern FILE * g_log;
+#define DEBUG 3
+
+#if defined(DEBUG) && DEBUG > 0
+ #define DEBUG_OPEN() debug_open()
+ #define DEBUG_CLOSE() debug_close()
+ #define DEBUG_PRINT(fmt, args...) fprintf(g_log, "DEBUG: %s:%d:%s(): " fmt, \
+    __FILE__, __LINE__, __func__, ##args)
+#else
+ #define DEBUG_PRINT(fmt, args...) /* Don't do anything in release builds */
+ #define DEBUG_OPEN()
+ #define DEBUG_CLOSE()
+#endif
+
+
+
 
 int distance(int sq1, int sq2);
 void printMoves(POSITION *pos, MOVELIST * moves);

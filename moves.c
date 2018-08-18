@@ -4,27 +4,43 @@
 uint64_t g_kingMoves[64];
 uint64_t g_knightMoves[64];
 
-
 uint64_t g_rookMoves[64];
 // Implementing Kingergarten Multiplication for our slider move generators.
 uint8_t g_rankMoves[8][256];
 
 MOVELIST g_moveList;
 
-void movegen_clearMoves() {
+uint64_t g_kCastleMasks[2];
+uint64_t g_qCastleMasks[2];
 
-	memset(&g_moveList,0,sizeof(g_moveList));
-	g_moveList.count = 0;
+void movegen_clearMoves(POSITION *pos) {
+
+	memset(pos->moves,0,sizeof(pos->moves));
+	pos->moveCount = 0;
 }
 
-void movegen_addMove(int color, int piece, int from, int to, bool capture) {
-	
-	POSITION * pos;
+void movegen_addCastleMove(POSITION *pos, int color, bool kSide) {
 
-	g_moveList.moves[g_moveList.count].color = color;
-	g_moveList.moves[g_moveList.count].piece = piece;
-	g_moveList.moves[g_moveList.count].from = from;
-	g_moveList.moves[g_moveList.count].to = to;
+	pos->moves[pos->moveCount].color = color;
+	pos->moves[pos->moveCount].kCastle = kSide;
+	pos->moves[pos->moveCount].from = color == WHITE ? E1 : E8;
+	
+	if (kSide) {
+		pos->moves[pos->moveCount].to = color == WHITE ? G1 : G8; 
+	} else {
+		pos->moves[pos->moveCount].to = color == WHITE ? C1 : C8; 
+	}
+
+	pos->moves[pos->moveCount++].qCastle = !kSide;
+
+}
+
+void movegen_addMove(POSITION *pos, int color, int piece, int from, int to, bool capture) {
+
+	pos->moves[pos->moveCount].color = color;
+	pos->moves[pos->moveCount].piece = piece;
+	pos->moves[pos->moveCount].from = from;
+	pos->moves[pos->moveCount].to = to;
 	
 	//
 	// if this is a capture, find the captured piece.
@@ -34,28 +50,28 @@ void movegen_addMove(int color, int piece, int from, int to, bool capture) {
 		pos = eng_curPosition();		
 		for (PIECES p = PAWN ; p < PMAX; p++) {
 			if (SQUAREMASKS[to] & pos->pieces[OPPONENT(color)][p]) {
-				g_moveList.moves[g_moveList.count].capture = p;
+				pos->moves[pos->moveCount].capture = p;
 				break;
 			}
 		}
 	}
 	
-	g_moveList.count++;
+	pos->moveCount++;
 }
 
-void movegen_addPawnMove(int color, int piece, int from, int to, bool capture, bool epCapture, bool epMove) {
+void movegen_addPawnMove(POSITION *pos, int color, int piece, int from, int to, bool capture, bool epCapture, bool epMove) {
 	//
 	// Check to see if this is a pawn promotion, and generate all promotion possibilities if so.
 	//
 	if (RANKMASKS[color == WHITE ? 7 : 0] & SQUAREMASKS[to]) {
 		for (PIECES p = KNIGHT; p < KING; p++) {
-			g_moveList.moves[g_moveList.count].promotion = p;
-			movegen_addMove(color,piece,from,to,capture);
+			pos->moves[pos->moveCount].promotion = p;
+			movegen_addMove(pos,color,piece,from,to,capture);
 		}
 	} else {
-		g_moveList.moves[g_moveList.count].epCapture = epCapture;
-		g_moveList.moves[g_moveList.count].epMove = epMove;
-		movegen_addMove(color,piece,from,to,capture);
+		pos->moves[pos->moveCount].epCapture = epCapture;
+		pos->moves[pos->moveCount].epMove = epMove;
+		movegen_addMove(pos,color,piece,from,to,capture);
 	}
 }
 
@@ -81,7 +97,7 @@ void movegen_king(POSITION *pos) {
 		while(m) {
 			to = bitScanForward(m);
 			m ^= SQUAREMASKS[to];
-			movegen_addMove(pos->toMove,KING,from,to,SQUAREMASKS[to] & opp);
+			movegen_addMove(pos,pos->toMove,KING,from,to,SQUAREMASKS[to] & opp);
 		}
 	}
 }
@@ -105,7 +121,7 @@ void movegen_knight(POSITION *pos) {
 		while(m) {
 			to = bitScanForward(m);
 			m ^= SQUAREMASKS[to];
-			movegen_addMove(pos->toMove,KNIGHT,from,to,SQUAREMASKS[to] & opp);
+			movegen_addMove(pos,pos->toMove,KNIGHT,from,to,SQUAREMASKS[to] & opp);
 		}
 	}
 }
@@ -151,32 +167,6 @@ uint64_t movegen_getDiagonalMoves(POSITION *pos, uint8_t sq) {
 
 }
 
-/*
-def get_diag_moves_bb(i, occ):
-    """
-    i is index of square
-    occ is the combined occupancy of the board
-    """
-    f = i & np.uint8(7)
-    occ = tables.DIAG_MASKS[i] & occ # isolate diagonal occupancy
-    occ = (tables.FILES[File.A] * occ) >> np.uint8(56) # map to first rank
-    occ = tables.FILES[File.A] * tables.FIRST_RANK_MOVES[f][occ] # lookup and map back to diagonal
-    return tables.DIAG_MASKS[i] & occ
-
-
-def get_antidiag_moves_bb(i, occ):
-    """
-    i is index of square
-    occ is the combined occupancy of the board
-    """
-    f = i & np.uint8(7)
-    occ = tables.ANTIDIAG_MASKS[i] & occ # isolate antidiagonal occupancy
-    occ = (tables.FILES[File.A] * occ) >> np.uint8(56) # map to first rank
-    occ = tables.FILES[File.A] * tables.FIRST_RANK_MOVES[f][occ] # lookup and map back to antidiagonal
-    return tables.ANTIDIAG_MASKS[i] & occ
-
-*/
-
 void movegen_sliderDiagonal(POSITION *pos, PIECES piece) {
 
 	uint64_t sliders = pos->pieces[pos->toMove][piece];
@@ -197,11 +187,24 @@ void movegen_sliderDiagonal(POSITION *pos, PIECES piece) {
 			m ^= SQUAREMASKS[to];
 
 			if ((SQUAREMASKS[to] & self) == 0) {
-				movegen_addMove(pos->toMove,piece,from,to,SQUAREMASKS[to] & opp);
+				movegen_addMove(pos,pos->toMove,piece,from,to,SQUAREMASKS[to] & opp);
 			}
 		}
 	}
 }
+
+void movegen_castling(POSITION *pos) {
+
+
+	if (pos->kCastle[pos->toMove] && ((g_kCastleMasks[pos->toMove] & pos->all) == 0)) {
+		movegen_addCastleMove(pos,pos->toMove,true);
+	}
+
+	if (pos->qCastle[pos->toMove] && ((g_qCastleMasks[pos->toMove] & pos->all) == 0)) {
+		movegen_addCastleMove(pos,pos->toMove,false);
+	}
+}
+
 
 void movegen_sliderFileRank(POSITION *pos,PIECES piece) {
 
@@ -223,7 +226,7 @@ void movegen_sliderFileRank(POSITION *pos,PIECES piece) {
 			m ^= SQUAREMASKS[to];
 
 			if ((SQUAREMASKS[to] & self) == 0) {
-				movegen_addMove(pos->toMove,piece,from,to,SQUAREMASKS[to] & opp);
+				movegen_addMove(pos,pos->toMove,piece,from,to,SQUAREMASKS[to] & opp);
 			}
 		}
 
@@ -234,7 +237,7 @@ void movegen_sliderFileRank(POSITION *pos,PIECES piece) {
 			m ^= SQUAREMASKS[to];
 
 			if ((SQUAREMASKS[to] & self) == 0) {
-				movegen_addMove(pos->toMove,piece,from,to,SQUAREMASKS[to] & opp);
+				movegen_addMove(pos,pos->toMove,piece,from,to,SQUAREMASKS[to] & opp);
 			}
 		}
 	}
@@ -279,34 +282,36 @@ void movegen_blackPawn(POSITION *pos) {
 	while(m1) {
 		sq = bitScanForward(m1);
 		m1 ^= SQUAREMASKS[sq];
-		movegen_addPawnMove(BLACK,PAWN,sq + NORTH, sq, false, false, false);
+		movegen_addPawnMove(pos,BLACK,PAWN,sq + NORTH, sq, false, false, false);
 	}
 	while(m2) {
 		sq = bitScanForward(m2);
 		m2 ^= SQUAREMASKS[sq];
-		movegen_addPawnMove(BLACK,PAWN,sq + NORTH + NORTH, sq, false, false, false);
+		movegen_addPawnMove(pos,BLACK,PAWN,sq + NORTH + NORTH, sq, false, false, false);
 	}
 	while(al) {
 		sq = bitScanForward(al);
 		al ^= SQUAREMASKS[sq];
-		movegen_addPawnMove(BLACK,PAWN,sq + NORTHWEST, sq, true, false, false);
+		movegen_addPawnMove(pos,BLACK,PAWN,sq + NORTHWEST, sq, true, false, false);
 	}
 	while(ar) {
 		sq = bitScanForward(ar);
 		ar ^= SQUAREMASKS[sq];
-		movegen_addPawnMove(BLACK,PAWN,sq + NORTHEAST, sq, true, false, false);
+		movegen_addPawnMove(pos,BLACK,PAWN,sq + NORTHEAST, sq, true, false, false);
 	}
 	while(alep) {
 		sq = bitScanForward(alep);
 		alep ^= SQUAREMASKS[sq];
-		movegen_addPawnMove(BLACK,PAWN,sq + NORTHWEST, sq, false, true, false);
+		movegen_addPawnMove(pos,BLACK,PAWN,sq + NORTHWEST, sq, false, true, false);
 	}
 	while(arep) {
 		sq = bitScanForward(arep);
 		arep ^= SQUAREMASKS[sq];
-		movegen_addPawnMove(BLACK,PAWN,sq + NORTHEAST, sq, false, true, false);
+		movegen_addPawnMove(pos,BLACK,PAWN,sq + NORTHEAST, sq, false, true, false);
 	}
 }
+
+
 
 void movegen_whitePawn(POSITION *pos) {
 
@@ -338,32 +343,32 @@ void movegen_whitePawn(POSITION *pos) {
 	while(m1) {
 		sq = bitScanForward(m1);
 		m1 ^= SQUAREMASKS[sq];
-		movegen_addPawnMove(WHITE,PAWN,sq + SOUTH, sq, false, false, false);
+		movegen_addPawnMove(pos,WHITE,PAWN,sq + SOUTH, sq, false, false, false);
 	}
 	while(m2) {
 		sq = bitScanForward(m2);
 		m2 ^= SQUAREMASKS[sq];
-		movegen_addPawnMove(WHITE,PAWN,sq + SOUTH + SOUTH, sq, false, false, false);
+		movegen_addPawnMove(pos,WHITE,PAWN,sq + SOUTH + SOUTH, sq, false, false, false);
 	}
 	while(al) {
 		sq = bitScanForward(al);
 		al ^= SQUAREMASKS[sq];
-		movegen_addPawnMove(WHITE,PAWN,sq + SOUTHEAST, sq, true, false, false);
+		movegen_addPawnMove(pos,WHITE,PAWN,sq + SOUTHEAST, sq, true, false, false);
 	}
 	while(ar) {
 		sq = bitScanForward(ar);
 		ar ^= SQUAREMASKS[sq];
-		movegen_addPawnMove(WHITE,PAWN,sq + SOUTHWEST, sq, true, false, false);
+		movegen_addPawnMove(pos,WHITE,PAWN,sq + SOUTHWEST, sq, true, false, false);
 	}
 	while(alep) {
 		sq = bitScanForward(alep);
 		alep ^= SQUAREMASKS[sq];
-		movegen_addPawnMove(WHITE,PAWN,sq + SOUTHEAST, sq, false, true, false);
+		movegen_addPawnMove(pos,WHITE,PAWN,sq + SOUTHEAST, sq, false, true, false);
 	}
 	while(arep) {
 		sq = bitScanForward(arep);
 		arep ^= SQUAREMASKS[sq];
-		movegen_addPawnMove(WHITE,PAWN,sq + SOUTHWEST, sq, false, true, false);
+		movegen_addPawnMove(pos,WHITE,PAWN,sq + SOUTHWEST, sq, false, true, false);
 	}
 }
 
@@ -376,10 +381,6 @@ void movegen_pawn(POSITION *pos) {
 }
 
  
-
-MOVELIST * movegen_getMoves() {
-	return &g_moveList;
-}
 
 
 void movegen_initRankMoves() {
@@ -435,17 +436,19 @@ void movegen_init() {
 				g_rookMoves[i] |= SQUAREMASKS[j];
 			}
 		}
-
 	}
 
-
+	g_kCastleMasks[WHITE] = BPOS(F1) | BPOS(G1);
+	g_kCastleMasks[BLACK] = BPOS(F8) | BPOS(G8);
+	g_qCastleMasks[WHITE] = BPOS(B1) | BPOS(C1) | BPOS(D1);
+	g_qCastleMasks[BLACK] = BPOS(B8) | BPOS(C8) | BPOS(D8);
 
 	movegen_initRankMoves();
 }
 
 void movegen_generate(POSITION *pos) {
 
-	movegen_clearMoves();
+	movegen_clearMoves(pos);
 
 	movegen_king(pos);
 	movegen_queen(pos);
@@ -454,7 +457,7 @@ void movegen_generate(POSITION *pos) {
 	movegen_knight(pos);
 	movegen_pawn(pos);
 
-	printMoves(eng_curPosition(),&g_moveList);
+	movegen_castling(pos);
 }
 
 

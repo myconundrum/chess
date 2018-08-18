@@ -17,6 +17,13 @@ const int g_pieceValues[PMAX] = {1,3,3,5,9,999};
 POSITION g_position;
 POSITION * eng_curPosition() {return &g_position;}
 
+void eng_resetPosition() {
+	memset(&g_position,0,sizeof(g_position));
+}
+
+
+
+
 void eng_loadFEN(char *fen) {
 
 	char buf[256];
@@ -31,6 +38,8 @@ void eng_loadFEN(char *fen) {
 	int  fullMoves;
 	int  epFile;
 	int  epRank;
+
+	eng_resetPosition();
 
 	strcpy(buf,fen);
 	
@@ -125,6 +134,8 @@ void eng_loadFEN(char *fen) {
 void eng_initPosition() {
 
 	eng_loadFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0");
+	//eng_loadFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 0");
+	
 	//eng_loadFEN("rnbqkbnr/pppppppp/8/8/8/1p1p1p1p/PPPPPPPP/RNBQKBNR b KQkq - 0 0");
 	//eng_loadFEN("K1K4N/2N5/3K4/3n2R1/8/3pKp2/4pP2/8 w - - 0 23 ");
 	//eng_loadFEN("rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2");
@@ -136,6 +147,23 @@ void eng_initPosition() {
 		
 }
 
+
+
+MOVE * eng_bestMove() {
+	
+
+	POSITION * pos = eng_curPosition();
+	movegen_generate(pos);
+	
+	DEBUG_PRINT("after getmoves\n");
+
+
+	DEBUG_PRINT("%d moves\n",pos->moveCount);
+
+
+	return &pos->moves[0];
+
+}
 
 /*
 	used for validation tests during development.

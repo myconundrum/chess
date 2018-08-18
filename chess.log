@@ -1,0 +1,39 @@
+Log file created.
+DEBUG: main.c:12:main(): argc: 1
+IN: uci
+OUT: id name Chess Engine 0.1
+OUT: id author Marc Whitten
+OUT: uciok
+IN: isready
+OUT: readyok
+IN: stop
+IN: ucinewgame
+IN: isready
+OUT: readyok
+IN: position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+IN: go movetime 3000
+DEBUG: engine.c:158:eng_bestMove(): after getmoves
+DEBUG: engine.c:161:eng_bestMove(): 20 moves
+OUT: info score cp 13  depth 1 nodes 13 time 15 pv b1a3
+OUT: bestmove b1a3
+IN: stop
+IN: position fen rnbqkbnr/pppppppp/8/8/8/N7/PPPPPPPP/R1BQKBNR b KQkq - 1 1
+IN: go movetime 3000
+DEBUG: engine.c:158:eng_bestMove(): after getmoves
+DEBUG: engine.c:161:eng_bestMove(): 20 moves
+OUT: info score cp 13  depth 1 nodes 13 time 15 pv b8a6
+OUT: bestmove b8a6
+IN: stop
+IN: position fen r1bqkbnr/pppppppp/n7/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq - 2 2
+IN: go movetime 3000
+DEBUG: engine.c:158:eng_bestMove(): after getmoves
+DEBUG: engine.c:161:eng_bestMove(): 20 moves
+OUT: info score cp 13  depth 1 nodes 13 time 15 pv a1b1
+OUT: bestmove a1b1
+IN: stop
+IN: position fen r1bqkbnr/pppppppp/n7/8/8/N7/PPPPPPPP/1RBQKBNR b Kkq - 3 2
+IN: go movetime 3000
+DEBUG: engine.c:158:eng_bestMove(): after getmoves
+DEBUG: engine.c:161:eng_bestMove(): 20 moves
+OUT: info score cp 13  depth 1 nodes 13 time 15 pv a8b8
+OUT: bestmove a8b8
